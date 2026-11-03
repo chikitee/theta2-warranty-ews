@@ -4,9 +4,9 @@
 임계 = 1.645 × 강건σ(1.4826×MAD) : 분기 TTM 설정률 변화 / 전년 대비 변화 두 정의"""
 import os, re, json, numpy as np, pandas as pd, warnings; warnings.filterwarnings('ignore')
 from ews_core import *
-from run_theta2 import CONFIG, build
+from run_theta2 import CONFIG, build, D
 from config_battery_template import BATTERY_CONFIG as B
-HERE = os.path.dirname(os.path.abspath(__file__)); UP = os.path.join(HERE, '..'); Z = 1.645
+HERE = os.path.dirname(os.path.abspath(__file__)); UP = os.path.join(HERE, '..', 'data', 'dart'); OUT = os.path.join(HERE, '..', 'results'); Z = 1.645
 P = pd.read_pickle('panel.pkl'); H = pd.read_pickle('calib.pkl')['h']; df = P['df']
 
 def prov_xlsx(path, sheet, s_col, r_col, r_scale):
@@ -45,7 +45,7 @@ PROV = {'현대': prov_xlsx(os.path.join(UP, '현대_분기별충당부채_DART�
         '기아': prov_xlsx(os.path.join(UP, '기아_분기별충당부채_DART.xlsx'), '기아_분기', '분기별 설정액(백만단위)', '매출액(백만원)', 1e6),
         'LG화학': lgchem_prov()}
 kia_scope = {'KIA': {'OPTIMA': (2011, 2014), 'SORENTO': (2012, 2014), 'SPORTAGE': (2011, 2013)}}
-raw = load_nhtsa(['hk.tsv.gz', 'peer.tsv.gz']); raw = raw[in_group(raw, B['target']) | in_group(raw, B['peer'])]
+raw = load_nhtsa([D + 'hk.tsv.gz', D + 'peer.tsv.gz']); raw = raw[in_group(raw, B['target']) | in_group(raw, B['peer'])]
 bdf = classify(raw, B['component_re'], B['critical_re'])
 SIG = {'현대': cusum(build(P['Tq'], P['Pq']), k=1.5, h=H),
        '기아': cusum(build(quarterly_counts(df, in_group(df, kia_scope)), P['Pq']), k=1.5, h=H),
@@ -71,6 +71,6 @@ for who in SIG:
 pd.set_option('display.width', 250)
 print(res['LG화학'].loc['2019Q1':'2022Q4', ['a', 'n_t', 'PRR_4Q', 'PRR_4Q_lo', 'KEY1_4Q', 'CUSUM', 'KEY2', 'TTM_rate', 'dTTM_pp', 'RESP', 'RESP_Y', 'GRADE']].round(2).to_string())
 pd.to_pickle(dict(res=res, info=info), 'general_result.pkl')
-with pd.ExcelWriter(os.path.join(UP, '범용성_3사_DPA_결과.xlsx')) as w:
+with pd.ExcelWriter(os.path.join(OUT, '범용성_3사_DPA_결과.xlsx')) as w:
     pd.DataFrame([{**{'회사': k}, **{a: (str(b) if not isinstance(b, (float, int)) else round(b, 3)) for a, b in v.items()}} for k, v in info.items()]).to_excel(w, sheet_name='요약', index=False)
     for k, r in res.items(): r.reset_index(names='Quarter').astype({'Quarter': str}).round(4).to_excel(w, sheet_name=k, index=False)

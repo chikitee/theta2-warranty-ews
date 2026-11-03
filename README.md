@@ -47,6 +47,7 @@ DART 설정률 ──►  ③ 회계 반응: 설정률이 평소 이상으로 �
 - **위험 신호**: 2015Q2 경쟁차 대비 약 2.4배로 기준선 돌파(1차 리콜보다 1분기 앞섬), 이후 2022년까지 2배 아래로 내려간 분기 없음
 - **급증 감지**: 첫 경보 2014Q4(1차 리콜 3분기 전), 2021Q4·2022Q1 새 급증
 - **회계 반응**: 첫 유의 상승은 2018Q3로 **신호 후 13분기**. 그 사이 설정률은 1.1%대에서 1.5%대로 완만히 올랐지만 어느 분기도 평시 변동폭을 넘지 않음
+- **경고 구간**: 2016Q2~2018Q2 **9개 분기 연속** (위험 신호는 계속, 설정률은 제자리)
 - **사후 확인**: 2021Q4 경고 재발 → 3분기 뒤 2022Q3 1.36조 원 추가 충당
 
 | 연도 | 2015 | 2016 | 2017 | 2018 | 2019 | 2020 |
@@ -83,7 +84,14 @@ src/
   extract_nhtsa.py             # NHTSA 원본에서 대상군·대조군 행만 추출
 scripts/
   opendart_fetch.py            # OpenDART 정기보고서 원문 → 판매보증충당부채 변동표·매출 수집
+  opendart_kia_cf.py           # 기아 현금흐름표 전입액 수집
+  hyundai_dart_check.py        # 현대 분기 설정액: 주석 변동표 vs 현금흐름표 대사
+  kia_dart_provision.py        # 기아 분기 설정액 정리
   redraw_complaints.py         # 민원 추이 차트 재작성
+data/
+  nhtsa/                       # NHTSA 민원 추출본 hk.tsv.gz(현대·기아·제네시스), peer.tsv.gz(대조군), CMPL.txt(필드 정의), 월별 민원
+  dart/                        # 분기별 판매보증 설정액·매출 정리 엑셀, LG화학 주석 전입액, OpenDART 원문(zip)·추출 json
+results/                       # 3사 판정 결과 엑셀, h 보정·판정 결과 pkl
 docs/
   images/                      # 결과 그래프
   slides/                      # 최종 발표 슬라이드 (S01~S19)
@@ -93,22 +101,14 @@ docs/
 
 ```bash
 pip install -r requirements.txt
-
-# 1) NHTSA 민원 원본(FLAT_CMPL 또는 COMPLAINTS_RECEIVED_*.txt) 다운로드: https://www.nhtsa.gov/nhtsa-datasets-and-apis
 cd src
-python extract_nhtsa.py FLAT_CMPL.txt          # → hk.tsv.gz, peer.tsv.gz
-python run_theta2.py                           # → panel.pkl (대상군·대조군 분기 집계)
-python calibrate_h.py                          # → calib.pkl (h 보정)
-
-# 2) DART 판매보증 설정액·매출 (OpenDART API 키 필요)
-OPENDART_KEY=발급키 python ../scripts/opendart_fetch.py <corp_code> 20120101 20231231 <tag>
-
-# 3) 3개 사례 판정·민감도
-python validate_3cases.py
+python run_theta2.py        # data/nhtsa → panel.pkl (대상군·대조군 분기 집계)
+python calibrate_h.py       # 대조군 플라시보로 h 보정 → calib.pkl (h = 5.25)
+python validate_3cases.py   # 현대·기아·LG화학 판정 → results/범용성_3사_DPA_결과.xlsx
 python sensitivity_acc_cusum.py
 ```
 
-> 원천 데이터(NHTSA 원본, DART 원문, 분기별 설정액 정리 엑셀)는 용량·저작권 문제로 저장소에 포함하지 않았습니다. 모두 공개 자료이며 위 스크립트로 다시 수집할 수 있습니다. `validate_3cases.py`는 분기별 설정액·매출 엑셀(`현대_분기별충당부채_DART대조.xlsx` 등)을 상위 폴더에서 읽습니다.
+데이터는 모두 공개 자료입니다. NHTSA 원본(약 1GB)은 GitHub 용량 제한으로 대상군·대조군 행만 추출한 `data/nhtsa/*.tsv.gz`를 올렸고, 원본에서 다시 만들려면 [NHTSA 데이터셋](https://www.nhtsa.gov/nhtsa-datasets-and-apis)에서 민원 파일을 받아 `python extract_nhtsa.py FLAT_CMPL.txt`를 실행하면 됩니다. DART 원문을 새로 받으려면 OpenDART API 키를 환경변수로 넘깁니다(`OPENDART_KEY=발급키 python scripts/opendart_fetch.py <corp_code> <시작일> <종료일> <tag>`).
 
 ## 팀
 
