@@ -4,7 +4,7 @@ import numpy as np, pandas as pd
 from ews_core import *
 
 import os
-D = os.environ.get('EWS_DATA', './')   # hk.tsv.gz, peer.tsv.gz 위치
+D = os.environ.get('EWS_DATA', os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data', 'nhtsa', ''))   # hk.tsv.gz, peer.tsv.gz 위치
 CONFIG = dict(
     # 대상군: 세타2 GDI 탑재 차종·연식 (미국 집단소송 합의·KSDS 캠페인 대상 기준)
     target={'HYUNDAI': {'SONATA': (2011, 2019), 'SANTA FE SPORT': (2013, 2018), 'SANTA FE': [2019],

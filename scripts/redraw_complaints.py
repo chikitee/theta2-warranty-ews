@@ -13,7 +13,7 @@ for f in fm.findSystemFonts():
         fm.fontManager.addfont(f); _fams.append(fm.FontProperties(fname=f).get_name())
 plt.rcParams['font.family']=sorted(set(_fams),key=lambda n:'Malgun' not in n)+['sans-serif']; plt.rcParams['axes.unicode_minus']=False; plt.rcParams['font.size']=15
 C=R.CONFIG
-src=sys.argv[1] if len(sys.argv)>1 else [os.path.join(BASE,'data_ver2',f'COMPLAINTS_RECEIVED_{y}.txt') for y in ('2010-2014','2015-2019','2020-2024')]
+src=sys.argv[1] if len(sys.argv)>1 else [os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','data','nhtsa','hk.tsv.gz')]
 df=classify(load_nhtsa(src if isinstance(src,list) else [src]),C['component_re'],C['critical_re'])
 df['ENG']=df['COMPDESC'].fillna('').str.upper().str.contains('ENGINE').astype(int); df['CRIT']=df['CRIT'].astype(int)
 g=df[in_group(df,C['target'])].groupby('ODINO').agg(T=('LD','min'),CRIT=('CRIT','max'),ENG=('ENG','max')).dropna(subset=['T'])
@@ -21,7 +21,7 @@ g['M']=g['T'].dt.to_period('M'); g['Y']=g['T'].dt.year
 mon=g.groupby('M')[['ENG','CRIT']].sum().reindex(pd.period_range('2010-01','2019-12',freq='M'),fill_value=0)
 yr=g.groupby('Y')[['ENG','CRIT']].sum().loc[2015:2020]
 # 감사보고서 기준 판매보증충당부채전입액(연결 현금흐름표)·매출액
-pv=pd.read_excel(os.path.join(BASE,'최종 발표 준비','클로드2','분기별충당부채_감사보고서기준.xlsx'))
+pv=pd.read_excel(os.path.join(os.path.dirname(os.path.abspath(__file__)),'..','data','dart','분기별충당부채_감사보고서기준.xlsx'))
 a=pv.groupby('연도').agg(prov=('분기별 설정액(백만단위)','sum'),rev=('매출액','sum')).loc[2015:2020]
 a['rate']=a.prov*1e6/a.rev*100; a['prov_tr']=a.prov/1e6
 out=pd.concat([yr,a[['prov_tr','rate']]],axis=1); out.columns=['엔진민원_전체','치명결함민원','전입액_조원','설정률_%']

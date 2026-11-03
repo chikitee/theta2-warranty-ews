@@ -219,11 +219,5 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# 원천 데이터·중간 산출물 (저장소에 올리지 않음)
-*.tsv.gz
-*.pkl
-*.xlsx
-*.txt
-!requirements.txt
-data/
-zip_*/
+# 중간 산출물
+src/panel.pkl
